@@ -31,7 +31,6 @@ targets:
         PRODUCT_NAME: GrokFS
         CODE_SIGN_STYLE: Manual
         DEVELOPMENT_TEAM: ""
-        ASSETCATALOG_COMPILER_APPICON_NAME: ""
         ENABLE_DEBUG_DYLIB: NO
   GrokFSTests:
     type: bundle.unit-test
