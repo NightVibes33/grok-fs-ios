@@ -2,6 +2,7 @@ import Foundation
 import Observation
 
 @Observable
+@MainActor
 final class AppModel {
     let workspace: WorkspaceStore
     let shell: FakeFSShell

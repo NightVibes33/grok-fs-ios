@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 protocol AgentRuntime {
     func send(_ prompt: String, cwd: String) async throws -> AsyncThrowingStream<AgentEvent, Error>
 }
@@ -20,7 +21,7 @@ struct LocalShellAgentRuntime: AgentRuntime {
 
     func send(_ prompt: String, cwd: String) async throws -> AsyncThrowingStream<AgentEvent, Error> {
         AsyncThrowingStream { continuation in
-            Task {
+            Task { @MainActor in
                 let trimmed = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
                 if trimmed.hasPrefix("$") {
                     let command = String(trimmed.dropFirst()).trimmingCharacters(in: .whitespacesAndNewlines)
