@@ -59,6 +59,25 @@ final class AppModel {
         ChatThreadStore.save(threads)
     }
 
+    func deleteThread(id: UUID) {
+        threads.removeAll { $0.id == id }
+        if threads.isEmpty {
+            newThread()
+        } else if selectedThreadID == id {
+            selectedThreadID = threads.first?.id
+        }
+        ChatThreadStore.save(threads)
+    }
+
+    func renameThread(id: UUID, title: String) {
+        guard let index = threads.firstIndex(where: { $0.id == id }) else { return }
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        threads[index].title = trimmed
+        threads[index].updatedAt = Date()
+        ChatThreadStore.save(threads)
+    }
+
     func updateThread(_ thread: ChatThread) {
         guard let index = threads.firstIndex(where: { $0.id == thread.id }) else { return }
         threads[index] = thread
