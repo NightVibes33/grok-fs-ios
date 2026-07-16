@@ -43,7 +43,9 @@ jobs:
         run: cargo install cargo-zigbuild --locked
       - name: Fetch official Grok Build
         run: |
-          git clone --filter=blob:none https://github.com/xai-org/grok-build.git engine/upstream
+          git init engine/upstream
+          git -C engine/upstream remote add origin https://github.com/xai-org/grok-build.git
+          git -C engine/upstream fetch --depth 1 origin "$GROK_BUILD_COMMIT"
           git -C engine/upstream checkout "$GROK_BUILD_COMMIT"
           test "$(git -C engine/upstream rev-parse HEAD)" = "$GROK_BUILD_COMMIT"
       - name: Patch sqlite-vec for musl

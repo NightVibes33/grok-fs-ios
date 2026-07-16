@@ -41,7 +41,7 @@ pub extern "C" fn grokfs_ish_bootstrap(
         let fs_root = support_path.join("fs");
         let data_root = fs_root.join("data");
 
-        if !data_root.join("bin/sh").exists() {
+        if !data_root.join("bin/sh").exists() || !data_root.join("usr/local/bin/grok").exists() {
             if fs_root.exists() {
                 fs::remove_dir_all(&fs_root).map_err(|error| error.to_string())?;
             }

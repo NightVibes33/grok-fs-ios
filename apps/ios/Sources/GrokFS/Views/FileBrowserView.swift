@@ -11,6 +11,7 @@ struct FileBrowserView: View {
     @State private var newFolderName = ""
     @State private var errorMessage: String?
     @State private var isWorking = false
+    @State private var hasLoadedWorkspace = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -65,8 +66,9 @@ struct FileBrowserView: View {
                 Label("Refresh", systemImage: "arrow.clockwise")
             }
         }
-        .task(id: model.selectedPath) {
-            await reload()
+        .onChange(of: model.selectedPath) {
+            guard hasLoadedWorkspace else { return }
+            Task { await reload() }
         }
         .alert("New File", isPresented: $showingNewFile) {
             TextField("name.txt", text: $newFileName)
@@ -110,6 +112,7 @@ struct FileBrowserView: View {
 
     @MainActor
     private func reload() async {
+        hasLoadedWorkspace = true
         isWorking = true
         defer { isWorking = false }
         do {
