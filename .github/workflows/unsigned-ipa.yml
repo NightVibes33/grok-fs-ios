@@ -1,0 +1,90 @@
+name: Unsigned IPA
+
+"on":
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: |
+          sw_vers
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        working-directory: apps/ios
+        run: xcodegen generate
+      - name: Build unsigned app
+        working-directory: apps/ios
+        run: |
+          xcodebuild build \
+            -project GrokFS.xcodeproj \
+            -scheme GrokFS \
+            -configuration Debug \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+  unsigned-ipa:
+    runs-on: macos-26
+    needs: validate
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: |
+          sw_vers
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        working-directory: apps/ios
+        run: xcodegen generate
+      - name: Archive unsigned
+        working-directory: apps/ios
+        run: |
+          xcodebuild archive \
+            -project GrokFS.xcodeproj \
+            -scheme GrokFS \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/GrokFS.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+      - name: Package unsigned IPA
+        working-directory: apps/ios
+        run: |
+          mkdir -p build/Payload
+          cp -R build/GrokFS.xcarchive/Products/Applications/GrokFS.app build/Payload/
+          cd build
+          zip -qry GrokFS-unsigned.ipa Payload
+          unzip -l GrokFS-unsigned.ipa | grep 'Payload/GrokFS.app'
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: GrokFS-unsigned-ipa-${{ github.sha }}
+          path: apps/ios/build/GrokFS-unsigned.ipa
+
+  repo-health:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check required files
+        run: |
+          test -f README.md
+          test -f LICENSE
+          test -f apps/ios/project.yml
+          test -f .github/workflows/unsigned-ipa.yml
+          ! grep -R "ghp_" -n .

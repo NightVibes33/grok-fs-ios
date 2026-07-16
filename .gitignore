@@ -1,0 +1,12 @@
+.DS_Store
+.build/
+DerivedData/
+build/
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.ipa
+Payload/
+apps/ios/GrokFS.xcodeproj/
+apps/ios/Generated/
+rootfs/cache/

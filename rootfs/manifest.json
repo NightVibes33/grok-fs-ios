@@ -1,0 +1,19 @@
+{
+  "name": "grokfs-alpine-rootfs",
+  "version": "0.1.0",
+  "defaultHome": "/root",
+  "persistentPaths": ["/root", "/tmp", "/mnt"],
+  "bootstrapCommands": [
+    "mkdir -p /root /tmp /mnt",
+    "printf 'GrokFS fakefs ready\\n' > /root/README.txt"
+  ],
+  "grokCliProbe": [
+    "uname -a",
+    "cat /etc/os-release",
+    "which node || true",
+    "which bun || true",
+    "which npm || true",
+    "which grok || true",
+    "grok --version || true"
+  ]
+}

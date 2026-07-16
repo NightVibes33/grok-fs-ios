@@ -1,0 +1,40 @@
+name: GrokFS
+options:
+  bundleIdPrefix: dev.grokfs
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+targets:
+  GrokFS:
+    type: application
+    platform: iOS
+    sources:
+      - Sources/GrokFS
+    resources:
+      - Sources/GrokFS/Resources
+    info:
+      path: Sources/GrokFS/Info.plist
+      properties:
+        CFBundleDisplayName: GrokFS
+        CFBundleShortVersionString: "0.1.0"
+        CFBundleVersion: "1"
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.grokfs.mobile
+        PRODUCT_NAME: GrokFS
+        CODE_SIGN_STYLE: Manual
+        DEVELOPMENT_TEAM: ""
+  GrokFSTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - Tests/GrokFSTests
+    dependencies:
+      - target: GrokFS
