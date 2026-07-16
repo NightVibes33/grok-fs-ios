@@ -34,6 +34,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           key: grok-build-aarch64-${{ env.GROK_BUILD_COMMIT }}
+          workspaces: engine/upstream -> target
       - name: Install cargo-zigbuild
         run: cargo install cargo-zigbuild --locked
       - name: Fetch official Grok Build
@@ -62,10 +63,10 @@ jobs:
           binary=engine/upstream/target/aarch64-unknown-linux-musl/release/xai-grok-pager
           test -x "$binary"
           file "$binary"
-          sha256sum "$binary" | tee grok-i686.sha256
+          sha256sum "$binary" | tee grok-aarch64.sha256
       - uses: actions/upload-artifact@v4
         with:
           name: grok-build-aarch64-musl-${{ env.GROK_BUILD_COMMIT }}
           path: |
             engine/upstream/target/aarch64-unknown-linux-musl/release/xai-grok-pager
-            grok-i686.sha256
+            grok-aarch64.sha256
