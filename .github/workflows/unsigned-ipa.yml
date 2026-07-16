@@ -87,4 +87,4 @@ jobs:
           test -f LICENSE
           test -f apps/ios/project.yml
           test -f .github/workflows/unsigned-ipa.yml
-          ! grep -R "ghp_" -n .
+          ! grep -R "ghp_" -n --exclude="unsigned-ipa.yml" .
