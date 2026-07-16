@@ -77,7 +77,7 @@ struct ChatView: View {
         model.updateThread(thread)
 
         do {
-            let stream = try await model.activeRuntime.send(prompt, cwd: thread.cwd)
+            let stream = try await model.activeRuntime.send(prompt, cwd: thread.cwd, sessionID: thread.id)
             for try await event in stream {
                 guard var current = model.selectedThread,
                       let index = current.messages.firstIndex(where: { $0.id == assistant.id }) else { continue }

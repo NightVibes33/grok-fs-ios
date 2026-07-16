@@ -23,7 +23,7 @@ struct GrokAPIRuntime: AgentRuntime {
     let apiKey: String?
     let model: String
 
-    func send(_ prompt: String, cwd: String) async throws -> AsyncThrowingStream<AgentEvent, Error> {
+    func send(_ prompt: String, cwd: String, sessionID: UUID) async throws -> AsyncThrowingStream<AgentEvent, Error> {
         guard let endpoint else { throw GrokRuntimeError.invalidEndpoint }
         guard let apiKey, !apiKey.isEmpty else { throw GrokRuntimeError.missingAPIKey }
 
@@ -114,4 +114,72 @@ private struct APIErrorEnvelope: Decodable {
     }
 
     let error: APIError
+}
+
+struct EmbeddedGrokRuntime: AgentRuntime {
+    let apiKey: String
+
+    func send(
+        _ prompt: String,
+        cwd: String,
+        sessionID: UUID
+    ) async throws -> AsyncThrowingStream<AgentEvent, Error> {
+        AsyncThrowingStream { continuation in
+            let task = Task { @MainActor in
+                do {
+                    let command = [
+                        "XAI_API_KEY=\(shellQuote(apiKey))",
+                        "/usr/local/bin/grok",
+                        "--prompt", shellQuote(prompt),
+                        "--directory", shellQuote(cwd),
+                        "--session-id", sessionID.uuidString.lowercased(),
+                        "--output-format", "streaming-json",
+                        "--always-approve"
+                    ].joined(separator: " ")
+                    let result = try await EmbeddedIshRuntime.shared.run(
+                        command,
+                        cwd: cwd,
+                        timeout: .seconds(1_800)
+                    )
+                    guard result.exitCode == 0 else {
+                        throw GrokRuntimeError.server(
+                            status: Int(result.exitCode),
+                            message: result.output
+                        )
+                    }
+                    for line in result.output.split(separator: "\n") {
+                        guard let data = String(line).data(using: .utf8),
+                              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                              let type = object["type"] as? String else {
+                            continue
+                        }
+                        let text = object["data"] as? String ?? ""
+                        switch type {
+                        case "text":
+                            continuation.yield(AgentEvent(kind: .text, text: text))
+                        case "thought":
+                            if !text.isEmpty {
+                                continuation.yield(AgentEvent(kind: .tool, text: "\nThinking: \(text)\n"))
+                            }
+                        case "tool", "tool_use", "tool_result":
+                            continuation.yield(AgentEvent(kind: .tool, text: "\n\(text)\n"))
+                        case "error":
+                            continuation.yield(AgentEvent(kind: .text, text: "\n\(text)\n"))
+                        default:
+                            break
+                        }
+                    }
+                    continuation.yield(AgentEvent(kind: .done, text: ""))
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
+    private func shellQuote(_ value: String) -> String {
+        "'" + value.replacingOccurrences(of: "'", with: "'\\''") + "'"
+    }
 }

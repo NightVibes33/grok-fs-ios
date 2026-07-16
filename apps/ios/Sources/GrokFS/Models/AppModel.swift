@@ -10,7 +10,7 @@ final class AppModel {
     var threads: [ChatThread]
     var selectedThreadID: UUID?
     var selectedPath: String = "/root"
-    var runtimeMode: RuntimeMode = .localShell
+    var runtimeMode: RuntimeMode = .grokBuild
 
     init() {
         let workspace = WorkspaceStore()
@@ -31,6 +31,8 @@ final class AppModel {
 
     var activeRuntime: any AgentRuntime {
         switch runtimeMode {
+        case .grokBuild:
+            EmbeddedGrokRuntime(apiKey: settings.grokAPIKey)
         case .localShell:
             LocalShellAgentRuntime(shell: shell)
         case .grokAPI:
@@ -65,6 +67,7 @@ final class AppModel {
 }
 
 enum RuntimeMode: String, CaseIterable, Identifiable, Codable {
+    case grokBuild = "Grok Build"
     case localShell = "Local Shell"
     case grokAPI = "Grok API"
 

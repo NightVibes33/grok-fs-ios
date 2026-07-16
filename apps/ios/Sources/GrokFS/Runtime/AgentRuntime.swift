@@ -2,7 +2,7 @@ import Foundation
 
 @MainActor
 protocol AgentRuntime {
-    func send(_ prompt: String, cwd: String) async throws -> AsyncThrowingStream<AgentEvent, Error>
+    func send(_ prompt: String, cwd: String, sessionID: UUID) async throws -> AsyncThrowingStream<AgentEvent, Error>
 }
 
 struct AgentEvent: Equatable {
@@ -19,14 +19,14 @@ struct AgentEvent: Equatable {
 struct LocalShellAgentRuntime: AgentRuntime {
     let shell: FakeFSShell
 
-    func send(_ prompt: String, cwd: String) async throws -> AsyncThrowingStream<AgentEvent, Error> {
+    func send(_ prompt: String, cwd: String, sessionID: UUID) async throws -> AsyncThrowingStream<AgentEvent, Error> {
         AsyncThrowingStream { continuation in
             Task { @MainActor in
                 let trimmed = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
                 if trimmed.hasPrefix("$") {
                     let command = String(trimmed.dropFirst()).trimmingCharacters(in: .whitespacesAndNewlines)
                     continuation.yield(AgentEvent(kind: .tool, text: "$ \(command)\n"))
-                    let result = shell.run(command, cwd: cwd)
+                    let result = try await EmbeddedIshRuntime.shared.run(command, cwd: cwd)
                     continuation.yield(AgentEvent(kind: .text, text: result.output))
                     if result.exitCode != 0 {
                         continuation.yield(AgentEvent(kind: .text, text: "\nexit \(result.exitCode)"))
