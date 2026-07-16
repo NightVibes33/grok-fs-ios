@@ -28,7 +28,7 @@ struct GrokAPIRuntime: AgentRuntime {
         guard let apiKey, !apiKey.isEmpty else { throw GrokRuntimeError.missingAPIKey }
 
         return AsyncThrowingStream { continuation in
-            let task = Task {
+            let task = Task { @MainActor in
                 do {
                     var request = URLRequest(url: chatCompletionsURL(from: endpoint))
                     request.httpMethod = "POST"
