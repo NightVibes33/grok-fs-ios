@@ -1,0 +1,19 @@
+GrokFS includes and links GPL-licensed iSH embedding work derived from:
+
+- iSH and litter-ish: Copyright their respective contributors.
+  Source: https://github.com/dnakov/litter-ish
+  Pinned revision: c8e9dcb954963b0d9f359b3ad9da871f19b28652
+  License: GPL-3.0-or-later with the additional iOS distribution statement
+  published as LICENSE.IOS.
+
+- Litter: Copyright Daniel Nakov and contributors.
+  Source: https://github.com/dnakov/litter
+  Reference revision: 33dcf48728012cd4dae214570cca81ee95e3b341
+  License: GPL-3.0 with additional app-store distribution permission.
+
+Grok Build first-party source is Apache-2.0:
+  Source: https://github.com/xai-org/grok-build
+  Pinned revision: b189869b7755d2b482969acf6c92da3ecfeffd36
+
+Changes in GrokFS include a native SwiftUI client, C ABI bridge, fakefs packaging,
+and iOS-specific execution and UI adapters.

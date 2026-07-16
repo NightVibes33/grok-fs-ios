@@ -31,6 +31,9 @@ targets:
         PRODUCT_NAME: GrokFS
         CODE_SIGN_STYLE: Manual
         DEVELOPMENT_TEAM: ""
+        LIBRARY_SEARCH_PATHS: "$(inherited) $(SRCROOT)/GeneratedRuntime/ios-device"
+        OTHER_LDFLAGS: "$(inherited) -lgrokfs_ish_bridge -lc++ -lsqlite3"
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) GROKFS_EMBEDDED_ISH"
         ENABLE_DEBUG_DYLIB: NO
   GrokFSTests:
     type: bundle.unit-test

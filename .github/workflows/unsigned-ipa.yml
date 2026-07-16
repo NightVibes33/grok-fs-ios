@@ -19,11 +19,17 @@ jobs:
           sw_vers
           xcodebuild -version
           xcrun --sdk iphoneos --show-sdk-version
-      - name: Install XcodeGen
-        run: brew install xcodegen
+      - name: Install native build tools
+        run: brew install xcodegen meson ninja
       - name: Generate project
         working-directory: apps/ios
         run: xcodegen generate
+      - name: Build embedded iSH bridge
+        run: |
+          rustup target add aarch64-apple-ios aarch64-unknown-linux-musl
+          cargo build --manifest-path engine/ish-bridge/Cargo.toml --target aarch64-apple-ios --release
+          mkdir -p apps/ios/GeneratedRuntime/ios-device
+          cp engine/ish-bridge/target/aarch64-apple-ios/release/libgrokfs_ish_bridge.a apps/ios/GeneratedRuntime/ios-device/
       - name: Build unsigned app
         working-directory: apps/ios
         run: |
@@ -46,11 +52,17 @@ jobs:
           sw_vers
           xcodebuild -version
           xcrun --sdk iphoneos --show-sdk-version
-      - name: Install XcodeGen
-        run: brew install xcodegen
+      - name: Install native build tools
+        run: brew install xcodegen meson ninja
       - name: Generate project
         working-directory: apps/ios
         run: xcodegen generate
+      - name: Build embedded iSH bridge
+        run: |
+          rustup target add aarch64-apple-ios aarch64-unknown-linux-musl
+          cargo build --manifest-path engine/ish-bridge/Cargo.toml --target aarch64-apple-ios --release
+          mkdir -p apps/ios/GeneratedRuntime/ios-device
+          cp engine/ish-bridge/target/aarch64-apple-ios/release/libgrokfs_ish_bridge.a apps/ios/GeneratedRuntime/ios-device/
       - name: Archive unsigned
         working-directory: apps/ios
         run: |
