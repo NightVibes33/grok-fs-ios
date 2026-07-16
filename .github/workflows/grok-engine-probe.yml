@@ -1,0 +1,63 @@
+name: Grok Engine iSH Probe
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/grok-engine-probe.yml"
+      - "engine/**"
+      - "ThirdParty/UPSTREAMS.md"
+
+permissions:
+  contents: read
+
+env:
+  GROK_BUILD_COMMIT: b189869b7755d2b482969acf6c92da3ecfeffd36
+
+jobs:
+  i686-musl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler python3-pip
+          pip3 install --user ziglang
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.92.0
+          targets: i686-unknown-linux-musl
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: grok-build-i686-${{ env.GROK_BUILD_COMMIT }}
+      - name: Install cargo-zigbuild
+        run: cargo install cargo-zigbuild --locked
+      - name: Fetch official Grok Build
+        run: |
+          git clone --filter=blob:none https://github.com/xai-org/grok-build.git engine/upstream
+          git -C engine/upstream checkout "$GROK_BUILD_COMMIT"
+          test "$(git -C engine/upstream rev-parse HEAD)" = "$GROK_BUILD_COMMIT"
+      - name: Build headless-capable iSH binary
+        working-directory: engine/upstream
+        run: |
+          cargo zigbuild \
+            -p xai-grok-pager-bin \
+            --target i686-unknown-linux-musl \
+            --release \
+            --no-default-features
+      - name: Verify binary
+        run: |
+          binary=engine/upstream/target/i686-unknown-linux-musl/release/xai-grok-pager
+          test -x "$binary"
+          file "$binary"
+          sha256sum "$binary" | tee grok-i686.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: grok-build-i686-musl-${{ env.GROK_BUILD_COMMIT }}
+          path: |
+            engine/upstream/target/i686-unknown-linux-musl/release/xai-grok-pager
+            grok-i686.sha256
