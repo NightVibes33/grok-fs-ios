@@ -41,6 +41,14 @@ jobs:
           git clone --filter=blob:none https://github.com/xai-org/grok-build.git engine/upstream
           git -C engine/upstream checkout "$GROK_BUILD_COMMIT"
           test "$(git -C engine/upstream rev-parse HEAD)" = "$GROK_BUILD_COMMIT"
+      - name: Patch fastant for 32-bit x86
+        working-directory: engine/upstream
+        run: |
+          cargo fetch --target i686-unknown-linux-musl
+          source_file="$(find "$HOME/.cargo/registry/src" -path "*/fastant-0.1.10/src/tsc_now.rs" -print -quit)"
+          test -n "$source_file"
+          sed -i "s/core::arch::x86_64/core::arch::x86/g" "$source_file"
+          grep -n "core::arch::x86::__cpuid" "$source_file"
       - name: Build headless-capable iSH binary
         working-directory: engine/upstream
         run: |
