@@ -10,6 +10,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  GROK_ENGINE_URL: https://github.com/NightVibes33/grok-fs-ios/releases/download/engine-b189869b/grok-aarch64-musl
+  GROK_ENGINE_SHA256: cd937a9297fe7e73ed61941d0bcf7db7bc84409e4d38bf09232b4b40c231ead9
+
 permissions:
   contents: read
 
@@ -23,6 +27,13 @@ jobs:
           sw_vers
           xcodebuild -version
           xcrun --sdk iphoneos --show-sdk-version
+      - name: Embed pinned Grok Build engine
+        run: |
+          curl --fail --location --retry 3 "$GROK_ENGINE_URL" --output /tmp/grok-aarch64-musl
+          echo "$GROK_ENGINE_SHA256  /tmp/grok-aarch64-musl" | shasum -a 256 --check
+          scripts/prepare-grok-rootfs.sh apps/ios/Sources/GrokFS/Resources/fs.tar.gz /tmp/grok-aarch64-musl /tmp/fs-with-grok.tar.gz
+          mv /tmp/fs-with-grok.tar.gz apps/ios/Sources/GrokFS/Resources/fs.tar.gz
+          tar -tzf apps/ios/Sources/GrokFS/Resources/fs.tar.gz | grep -qx "fs/data/usr/local/bin/grok"
       - name: Install native build tools
         run: brew install xcodegen meson ninja
       - name: Generate project
@@ -56,6 +67,13 @@ jobs:
           sw_vers
           xcodebuild -version
           xcrun --sdk iphoneos --show-sdk-version
+      - name: Embed pinned Grok Build engine
+        run: |
+          curl --fail --location --retry 3 "$GROK_ENGINE_URL" --output /tmp/grok-aarch64-musl
+          echo "$GROK_ENGINE_SHA256  /tmp/grok-aarch64-musl" | shasum -a 256 --check
+          scripts/prepare-grok-rootfs.sh apps/ios/Sources/GrokFS/Resources/fs.tar.gz /tmp/grok-aarch64-musl /tmp/fs-with-grok.tar.gz
+          mv /tmp/fs-with-grok.tar.gz apps/ios/Sources/GrokFS/Resources/fs.tar.gz
+          tar -tzf apps/ios/Sources/GrokFS/Resources/fs.tar.gz | grep -qx "fs/data/usr/local/bin/grok"
       - name: Install native build tools
         run: brew install xcodegen meson ninja
       - name: Generate project
@@ -87,6 +105,7 @@ jobs:
           cd build
           zip -qry GrokFS-unsigned.ipa Payload
           unzip -l GrokFS-unsigned.ipa | grep 'Payload/GrokFS.app'
+          unzip -p GrokFS-unsigned.ipa Payload/GrokFS.app/fs.tar.gz | tar -tzf - | grep -qx 'fs/data/usr/local/bin/grok'
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:

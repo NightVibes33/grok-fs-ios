@@ -53,8 +53,23 @@ pub extern "C" fn grokfs_ish_bootstrap(
                 .map_err(|error| error.to_string())?;
         }
 
-        IshInstance::boot(&data_root, Some(Path::new("/root")))
-            .map_err(|error| error.to_string())
+        let instance = IshInstance::boot(&data_root, Some(Path::new("/root")))
+            .map_err(|error| error.to_string())?;
+        let setup = vec![
+            "/bin/sh".to_string(),
+            "-lc".to_string(),
+            "mkdir -p /root /tmp /usr/local/bin; chmod 1777 /tmp; printf 'nameserver 1.1.1.1\\nnameserver 8.8.8.8\\n' > /etc/resolv.conf".to_string(),
+        ];
+        let (code, output) = instance.run_oneshot(
+            &setup,
+            Path::new("/root"),
+            &HashMap::new(),
+            Some(10_000),
+        );
+        if code != 0 {
+            return Err(format!("runtime setup failed ({code}): {}", String::from_utf8_lossy(&output)));
+        }
+        Ok(instance)
     })();
 
     match result {

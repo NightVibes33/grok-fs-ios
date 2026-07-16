@@ -6,7 +6,9 @@ struct FileBrowserView: View {
     @State private var selectedFile: WorkspaceItem?
     @State private var editorText = ""
     @State private var showingNewFile = false
+    @State private var showingNewFolder = false
     @State private var newFileName = ""
+    @State private var newFolderName = ""
     @State private var errorMessage: String?
     @State private var isWorking = false
 
@@ -41,10 +43,21 @@ struct FileBrowserView: View {
         }
         .navigationTitle("Files")
         .toolbar {
-            Button {
-                showingNewFile = true
+            Menu {
+                Button { showingNewFile = true } label: {
+                    Label("New File", systemImage: "doc.badge.plus")
+                }
+                Button { showingNewFolder = true } label: {
+                    Label("New Folder", systemImage: "folder.badge.plus")
+                }
+                Button(role: .destructive) {
+                    Task { await deleteSelectedItem() }
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+                .disabled(selectedFile == nil)
             } label: {
-                Label("New File", systemImage: "doc.badge.plus")
+                Label("File Actions", systemImage: "plus")
             }
             Button {
                 Task { await reload() }
@@ -58,6 +71,11 @@ struct FileBrowserView: View {
         .alert("New File", isPresented: $showingNewFile) {
             TextField("name.txt", text: $newFileName)
             Button("Create") { Task { await createFile() } }
+            Button("Cancel", role: .cancel) {}
+        }
+        .alert("New Folder", isPresented: $showingNewFolder) {
+            TextField("folder", text: $newFolderName)
+            Button("Create") { Task { await createFolder() } }
             Button("Cancel", role: .cancel) {}
         }
         .alert("Filesystem Error", isPresented: Binding(
@@ -174,6 +192,44 @@ struct FileBrowserView: View {
             )
             guard result.exitCode == 0 else { throw FilesystemError.command(result.output) }
             newFileName = ""
+            await reload()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func createFolder() async {
+        let trimmed = newFolderName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, !trimmed.contains("/") else { return }
+        let path = "\(model.selectedPath == "/" ? "" : model.selectedPath)/\(trimmed)"
+        do {
+            let result = try await EmbeddedIshRuntime.shared.run(
+                "mkdir -- \(shellQuote(path))",
+                cwd: model.selectedPath,
+                timeout: .seconds(30)
+            )
+            guard result.exitCode == 0 else { throw FilesystemError.command(result.output) }
+            newFolderName = ""
+            await reload()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func deleteSelectedItem() async {
+        guard let selectedFile else { return }
+        do {
+            let command = selectedFile.isDirectory ? "rm -rf --" : "rm -f --"
+            let result = try await EmbeddedIshRuntime.shared.run(
+                "\(command) \(shellQuote(selectedFile.path))",
+                cwd: model.selectedPath,
+                timeout: .seconds(30)
+            )
+            guard result.exitCode == 0 else { throw FilesystemError.command(result.output) }
+            self.selectedFile = nil
+            editorText = ""
             await reload()
         } catch {
             errorMessage = error.localizedDescription

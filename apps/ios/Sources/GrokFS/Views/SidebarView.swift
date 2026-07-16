@@ -4,6 +4,16 @@ struct SidebarView: View {
     @Environment(AppModel.self) private var model
     @State private var renamingThreadID: UUID?
     @State private var renameText = ""
+    @State private var searchText = ""
+
+    private var filteredThreads: [ChatThread] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return model.threads }
+        return model.threads.filter { thread in
+            thread.title.localizedCaseInsensitiveContains(query)
+                || thread.messages.contains { $0.text.localizedCaseInsensitiveContains(query) }
+        }
+    }
 
     var body: some View {
         @Bindable var model = model
@@ -16,7 +26,7 @@ struct SidebarView: View {
             }
 
             Section("Sessions") {
-                ForEach(model.threads) { thread in
+                ForEach(filteredThreads) { thread in
                     VStack(alignment: .leading, spacing: 4) {
                         Text(thread.title)
                             .font(.headline)
@@ -53,6 +63,7 @@ struct SidebarView: View {
                 }
             }
         }
+        .searchable(text: $searchText, prompt: "Search sessions")
         .navigationTitle("GrokFS")
         .toolbar {
             Button {

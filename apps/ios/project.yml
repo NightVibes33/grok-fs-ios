@@ -20,7 +20,7 @@ targets:
       path: Sources/GrokFS/Info.plist
       properties:
         CFBundleDisplayName: GrokFS
-        CFBundleShortVersionString: "0.1.0"
+        CFBundleShortVersionString: "1.0.0"
         CFBundleVersion: "1"
         UILaunchScreen: {}
         UIApplicationSceneManifest:

@@ -81,11 +81,19 @@ struct ChatView: View {
             for try await event in stream {
                 guard var current = model.selectedThread,
                       let index = current.messages.firstIndex(where: { $0.id == assistant.id }) else { continue }
-                if event.kind == .done {
+                switch event.kind {
+                case .done:
                     current.messages[index].isStreaming = false
-                } else {
+                case .text:
                     current.messages[index].text += event.text
                     assistant = current.messages[index]
+                case .tool:
+                    if index > 0,
+                       current.messages[index - 1].role == .tool {
+                        current.messages[index - 1].text += event.text
+                    } else {
+                        current.messages.insert(ChatMessage(role: .tool, text: event.text), at: index)
+                    }
                 }
                 current.updatedAt = Date()
                 model.updateThread(current)

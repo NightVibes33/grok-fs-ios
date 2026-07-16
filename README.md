@@ -1,55 +1,73 @@
 # GrokFS iOS
 
-GrokFS is a native SwiftUI coding chat client for iOS 26 with a persistent app-owned fake filesystem rooted at `/root`. It builds an unsigned real-device IPA on GitHub's `macos-26` runners.
+GrokFS is a native SwiftUI iOS 26 coding agent powered by the official open-source Grok Build engine. Grok Build runs locally as a static AArch64-musl executable inside a persistent embedded iSH Alpine filesystem.
 
-The project tracks the official open-source [xai-org/grok-build](https://github.com/xai-org/grok-build) agent and ACP surface. The currently shippable on-device runtime uses xAI's chat-completions API and a deterministic fakefs shell. The source boundary is designed for a later Rust static-library adapter; the desktop CLI itself cannot simply be spawned by a sandboxed iOS app.
+## Included Product
 
-## Product
+- Official `xai-org/grok-build` headless agent pinned to commit `b189869b7755d2b482969acf6c92da3ecfeffd36`.
+- Daniel Nakov's `litter-ish` embedded kernel pinned to `c8e9dcb954963b0d9f359b3ad9da871f19b28652`.
+- Persistent Alpine fakefs with `/root`, `/tmp`, `/mnt`, and `/root/.grok`.
+- Native SwiftUI chat, Grok thoughts/tool event cards, conversation persistence, rename, delete, and search.
+- Stable UUIDs shared between native conversations and Grok Build sessions.
+- Native fakefs browser/editor with file and folder creation, save, recursive delete, and refresh.
+- Local shell mode and direct xAI API fallback.
+- xAI API key storage in iOS Keychain.
+- Runtime diagnostics showing iSH architecture and Grok Build version.
+- Source/license notices bundled in the application.
+- Unsigned real-device IPA built and inspected on GitHub `macos-26` runners.
 
-- Native three-column SwiftUI workspace on iPad and adaptive navigation on iPhone.
-- Persistent chat sessions with selectable Grok API or local-shell runtime.
-- xAI-compatible chat completions with endpoint and model configuration.
-- API key stored in the iOS Keychain.
-- Persistent fake filesystem with `/root`, `/tmp`, and `/mnt`.
-- File browser, text editor, create-folder, write, and remove operations.
-- Shell commands for `pwd`, `ls`, `cat`, `mkdir`, `rm`, and `echo`.
-- Apache-licensed Grok Build source pin and ACP integration contract.
-- CI compile check, unit-test compile, unsigned archive, IPA structure check, and artifact upload.
+## Runtime
 
-## Setup
-
-Open Settings in the app, select **Grok API**, enter an xAI API key, endpoint, and model. The default endpoint is `https://api.x.ai`; the client appends `/v1/chat/completions`.
-
-Select **Local Shell** to run commands against the fake filesystem. Prefix commands with `$`, for example:
+At build time, CI downloads the pinned engine release and verifies SHA-256:
 
 ```text
-$ ls /root
-$ echo hello > /root/hello.txt
-$ cat /root/hello.txt
+cd937a9297fe7e73ed61941d0bcf7db7bc84409e4d38bf09232b4b40c231ead9
 ```
+
+The engine is installed into the bundled rootfs as:
+
+```text
+/usr/local/bin/grok
+```
+
+The app invokes Grok Build in headless streaming-JSON mode with a persistent session UUID. Grok's own tools execute against the same `/root` that the native file browser displays.
+
+## Authentication
+
+Open Settings, enter an xAI API key, and select **Grok Build**. The key is stored in Keychain and passed to the embedded process as `XAI_API_KEY`.
 
 ## Unsigned IPA
 
-CI packages `Payload/GrokFS.app` as `GrokFS-unsigned.ipa`. The IPA has no signature and must be signed with a valid development, enterprise, or sideloading certificate before installation on a stock device.
+The workflow builds for `generic/platform=iOS`, archives without signing, creates `Payload/GrokFS.app`, and uploads `GrokFS-unsigned.ipa`. It also opens the IPA and verifies that the nested rootfs contains `/usr/local/bin/grok`.
 
-## Upstreams and Licensing
+The IPA must be signed with an appropriate development, enterprise, or sideloading certificate before installation on a stock device.
 
-Official Grok Build is pinned in [ThirdParty/UPSTREAMS.md](ThirdParty/UPSTREAMS.md). Its first-party source is Apache-2.0.
-
-Daniel Nakov's Litter is GPL-3.0 with an additional app-store permission. Its iSH bridge is useful reference work, but source is not copied here because doing so would change the combined project's licensing obligations. Exact Litter reuse requires a GPL release decision or a separate license.
-
-## Development
+## Build From Source
 
 ```sh
-brew install xcodegen
+brew install xcodegen meson ninja
+rustup target add aarch64-apple-ios aarch64-unknown-linux-musl
+cargo build \
+  --manifest-path engine/ish-bridge/Cargo.toml \
+  --target aarch64-apple-ios \
+  --release
+mkdir -p apps/ios/GeneratedRuntime/ios-device
+cp engine/ish-bridge/target/aarch64-apple-ios/release/libgrokfs_ish_bridge.a \
+  apps/ios/GeneratedRuntime/ios-device/
+scripts/prepare-grok-rootfs.sh \
+  apps/ios/Sources/GrokFS/Resources/fs.tar.gz \
+  /path/to/grok-aarch64-musl \
+  /tmp/fs-with-grok.tar.gz
+mv /tmp/fs-with-grok.tar.gz apps/ios/Sources/GrokFS/Resources/fs.tar.gz
 cd apps/ios
 xcodegen generate
 xcodebuild build \
   -project GrokFS.xcodeproj \
   -scheme GrokFS \
-  -configuration Debug \
   -destination 'generic/platform=iOS' \
   CODE_SIGNING_ALLOWED=NO
 ```
 
-The local iSH environment does not contain Apple's iPhoneOS SDK. GitHub Actions on `macos-26` is the authoritative compile and archive verifier.
+## License
+
+The combined application is GPL-3.0-or-later because it links the GPL-licensed iSH embedding runtime. Grok Build's first-party source remains Apache-2.0. See `NOTICE`, `ThirdParty/UPSTREAMS.md`, and the license files bundled under application resources.

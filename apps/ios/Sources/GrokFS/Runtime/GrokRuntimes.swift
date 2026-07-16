@@ -153,7 +153,7 @@ struct EmbeddedGrokRuntime: AgentRuntime {
                               let type = object["type"] as? String else {
                             continue
                         }
-                        let text = object["data"] as? String ?? ""
+                        let text = eventText(object["data"] ?? object["message"])
                         switch type {
                         case "text":
                             continuation.yield(AgentEvent(kind: .text, text: text))
@@ -177,6 +177,14 @@ struct EmbeddedGrokRuntime: AgentRuntime {
             }
             continuation.onTermination = { _ in task.cancel() }
         }
+    }
+
+    private func eventText(_ value: Any?) -> String {
+        if let text = value as? String { return text }
+        guard let value, JSONSerialization.isValidJSONObject(value),
+              let data = try? JSONSerialization.data(withJSONObject: value, options: [.prettyPrinted]),
+              let text = String(data: data, encoding: .utf8) else { return "" }
+        return text
     }
 
     private func shellQuote(_ value: String) -> String {
