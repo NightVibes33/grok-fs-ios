@@ -9,6 +9,10 @@ on:
       - "engine/**"
       - "ThirdParty/UPSTREAMS.md"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
