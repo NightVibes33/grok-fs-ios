@@ -13,14 +13,23 @@ struct ChatView: View {
         }
         .navigationTitle(model.selectedThread?.title ?? "Session")
         .toolbar {
-            Menu {
-                ForEach(RuntimeMode.allCases) { mode in
-                    Button(mode.rawValue) {
-                        model.runtimeMode = mode
-                    }
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    model.newThread()
+                } label: {
+                    Label("New Session", systemImage: "square.and.pencil")
                 }
-            } label: {
-                Label(model.runtimeMode.rawValue, systemImage: "cpu")
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    ForEach(RuntimeMode.allCases) { mode in
+                        Button(mode.rawValue) {
+                            model.runtimeMode = mode
+                        }
+                    }
+                } label: {
+                    Label(model.runtimeMode.rawValue, systemImage: "cpu")
+                }
             }
         }
     }
