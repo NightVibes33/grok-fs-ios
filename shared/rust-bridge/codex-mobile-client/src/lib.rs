@@ -9,12 +9,16 @@ pub mod ish_exec;
 #[cfg(all(target_os = "ios", not(target_abi = "macabi")))]
 pub mod ish_runtime;
 
+#[cfg(all(target_os = "ios", not(target_abi = "macabi")))]
+pub(crate) mod grok_acp;
+
 // Always-compiled UniFFI-visible types. The host cdylib that
 // `generate-bindings.sh` feeds to uniffi-bindgen must contain these so the
 // generated Swift/Kotlin has `IshRunResult` / `IshBootstrapError` /
 // `ishBootstrap` / `ishDefaultCwd` / `ishRun` symbols on every lane.
 pub mod ish_types;
 pub mod proot_types;
+pub(crate) mod grok_acp_protocol;
 
 pub use ish_types::{IshBootstrapError, IshRunResult};
 pub use proot_types::ProotBootstrapError;

@@ -20,6 +20,7 @@ enum AgentRuntimeMetadataProvider {
 extension AgentRuntimeKind {
     static let claude: AgentRuntimeKind = "claude"
     static let codex: AgentRuntimeKind = "codex"
+    static let grok: AgentRuntimeKind = "grok"
     static let devin: AgentRuntimeKind = "devin"
     static let droid: AgentRuntimeKind = "droid"
     static let opencode: AgentRuntimeKind = "opencode"
@@ -113,8 +114,8 @@ extension AgentRuntimeKind {
     }
 
     private static func isStableAgentIdentity(_ name: String, displayName: String) -> Bool {
-        name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "codex"
-            || displayName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "codex"
+        ["codex", "grok"].contains(name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased())
+            || ["codex", "grok"].contains(displayName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased())
     }
 
     private var titlecased: String {
