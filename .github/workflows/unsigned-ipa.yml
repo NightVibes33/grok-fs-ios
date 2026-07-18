@@ -21,7 +21,7 @@ jobs:
   validate:
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Toolchain
         run: |
           sw_vers
@@ -35,7 +35,9 @@ jobs:
           mv /tmp/fs-with-grok.tar.gz apps/ios/Sources/GrokFS/Resources/fs.tar.gz
           tar -tzf apps/ios/Sources/GrokFS/Resources/fs.tar.gz | grep -qx "fs/data/usr/local/bin/grok"
       - name: Install native build tools
-        run: brew install xcodegen meson ninja
+        run: |
+          brew untap aws/tap 2>/dev/null || true
+          brew install xcodegen meson ninja
       - name: Generate project
         working-directory: apps/ios
         run: xcodegen generate
@@ -61,7 +63,7 @@ jobs:
     runs-on: macos-26
     needs: validate
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Toolchain
         run: |
           sw_vers
@@ -75,7 +77,9 @@ jobs:
           mv /tmp/fs-with-grok.tar.gz apps/ios/Sources/GrokFS/Resources/fs.tar.gz
           tar -tzf apps/ios/Sources/GrokFS/Resources/fs.tar.gz | grep -qx "fs/data/usr/local/bin/grok"
       - name: Install native build tools
-        run: brew install xcodegen meson ninja
+        run: |
+          brew untap aws/tap 2>/dev/null || true
+          brew install xcodegen meson ninja
       - name: Generate project
         working-directory: apps/ios
         run: xcodegen generate
@@ -107,7 +111,7 @@ jobs:
           unzip -l GrokFS-unsigned.ipa | grep 'Payload/GrokFS.app'
           unzip -p GrokFS-unsigned.ipa Payload/GrokFS.app/fs.tar.gz | tar -tzf - | grep -qx 'fs/data/usr/local/bin/grok'
       - name: Upload IPA
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: GrokFS-unsigned-ipa-${{ github.sha }}
           path: apps/ios/build/GrokFS-unsigned.ipa
@@ -115,7 +119,7 @@ jobs:
   repo-health:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Check required files
         run: |
           test -f README.md
